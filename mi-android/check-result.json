@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-12T14:49:21.062Z",
+  "configurationPrepared": true,
+  "upstreamPatchTested": true,
+  "zlibSource": {
+    "url": "https://codeload.github.com/madler/zlib/tar.gz/51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+    "sha256": "d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522",
+    "bytes": 1572004
+  },
+  "yaml": "No hay analizador YAML disponible; no se instaló ninguno.",
+  "cloudCompilationExecuted": false,
+  "androidBootVerified": false,
+  "apkVerified": false
+}

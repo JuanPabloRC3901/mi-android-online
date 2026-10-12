@@ -1,0 +1,47 @@
+name: Mi Android - Compilar QEMU experimental sin costo
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mi-android-qemu-experimental
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: ''
+      - name: Obtener las fuentes comprobadas
+        uses: actions/checkout@v4
+        with:
+          repository: dbontr/linux-lab
+          ref: 3a2233b01d65743886413c1f3c3dd76eee931e31
+          path: qemu-source
+          persist-credentials: false
+      - name: Preparar y compilar en Internet
+        run: |
+          node mi-android/prepare-qemu-cloud.mjs qemu-source
+          bash qemu-source/runtime-build/qemu/build.sh "$GITHUB_WORKSPACE/qemu-artifact"
+      - name: Empaquetar binario y fuentes correspondientes
+        run: bash mi-android/package-qemu-cloud.sh
+      - name: Publicar sólo una compilación experimental
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "mi-android-qemu-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            qemu-experimental.tar.gz qemu-corresponding-source.tar.gz SHA256SUMS-experimental \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "QEMU experimental - intento ${GITHUB_RUN_ID}" \
+            --notes-file mi-android/RELEASE-NOTES.md
+# Runner público estándar. Sin upload-artifact, cache, Packages, LFS ni Codespaces.
+# No ejecuta Android en el servidor y no modifica el sitio publicado.
