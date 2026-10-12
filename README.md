@@ -1,21 +1,21 @@
 # Mi Android Online
 
-El 12 de octubre de 2026 se inició la primera compilación de QEMU-WebAssembly en GitHub. La fase de compilación terminó correctamente y el empaquetado está en curso. Todavía no se verificaron Android ni APK con ese motor.
+[Entrar al emulador publicado](https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/) · [Código completo de la versión 8](https://github.com/JuanPabloRC3901/mi-android-online/releases/tag/source-v8)
 
-- [Entrar al emulador publicado](https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/)
-- [Código fuente completo de la versión 8](https://github.com/JuanPabloRC3901/mi-android-online/releases/tag/source-v8)
-- [Registro de la compilación experimental](https://github.com/JuanPabloRC3901/mi-android-online/actions/runs/38269961724)
+El Android probado de la página sigue usando v86, Android 4.4.4/API 19 y x86 de 32 bits. Se verificaron por HTTPS el arranque, la instalación original de ApiDemos y Selendroid, su apertura e interacción. Acepta selección de APK de hasta 256 MiB; no se instaló un APK real de ese tamaño. La RAM predeterminada es 1536 MiB; 2047 MiB es experimental. No ofrece traducción ARM/ARM64 ni compatibilidad con cualquier APK.
 
-El archivo `mi-android-online-codigo.zip` de la release contiene el proyecto del emulador completo. Los archivos mostrados en la raíz del repositorio son la configuración de la nueva compilación.
+## Motor QEMU propio compilado y probado
 
-El workflow se coloca en `.github/workflows/qemu-experimental.yml`; los scripts y notas se colocan en `mi-android/`. Todo se compila en el runner público estándar de GitHub. No se instala nada en el computador empresarial.
+La compilación completa terminó correctamente el 12 de octubre de 2026: [registro de Actions](https://github.com/JuanPabloRC3901/mi-android-online/actions/runs/38269961724). [Binario, fuentes correspondientes y checksums](https://github.com/JuanPabloRC3901/mi-android-online/releases/tag/mi-android-qemu-38269961724-1).
 
-Repositorio público de Mi Android Online en la cuenta JuanPabloRC3901. Aquí se prepara y compila el motor experimental; el Android probado sigue publicado en el sitio enlazado abajo. No se incluyen archivos particulares ni APK privados.
+Se habilitaron SDL y Pixman y el módulo tiene un heap compartido fijo de 3584 MiB. Ese heap incluye el motor y sus estructuras; no equivale a 3,5 GB de RAM Android. Los 14 checksums internos del runtime descargado coincidieron. QMP informó 768 MiB de hardware invitado y Linux 3.10.52 produjo registros reales. La captura QMP entregó 800 × 600 píxeles negros. Los perfiles de temporizadores, reloj por instrucciones, calibración y disco completo en memoria no completaron Android READY. No se enviaron órdenes de instalación ni apertura. La prueba icount duró más de 21 minutos y la MEMFS más de cuatro; una prueba SDL bloqueó su pestaña y el usuario la cerró. No se determinó una causa única.
 
-La ejecución es manual desde Actions. Verifica que el repositorio sea público; el workflow se detiene si es privado o pertenece a otro propietario. Obtiene Linux Lab desde un commit fijo, habilita Pixman y solicita un heap de 3584 MiB. No equivale a esa cantidad de RAM Android ni aporta traducción ARM/ARM64.
+[Resultados y registros](https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/engine-research.html). Este motor no sustituyó v86 y tampoco incorpora traducción ARM/ARM64. No se presenta como una versión Android funcional.
 
-El resultado esperado se publica como prerelease, junto con los fuentes correspondientes y checksums. No usa almacenamiento de artifacts, caches, Packages, LFS ni Codespaces. El runner estándar público es gratuito; los assets de Releases son la vía de entrega. No se habilitan servicios de pago ni se ejecuta Android en el servidor. Referencias: https://docs.github.com/en/actions/concepts/billing-and-usage y https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases.
+## Código y reproducción sin instalaciones en el PC empresarial
 
-Antes de sustituir v86 se deben comprobar pantalla real, mouse/teclado, arranque completo de Android, instalación de un APK original con checksum idéntico, apertura e interacción. La versión funcional actual sigue disponible en https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/ .
+El archivo **mi-android-online-codigo.zip** de la release source-v8 contiene el proyecto completo. Los archivos mostrados en la raíz del repositorio contienen la configuración de compilación; el ZIP automático del tag también contiene sólo esa configuración.
 
-Comprobaciones locales: el preparador de flags se ejecutó sobre la configuración upstream; el parche upstream de zlib y allocator se ejecutó sobre su Dockerfile; la descarga fijada de zlib coincidió con SHA256 d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522. No hubo analizador YAML disponible y no se instaló uno. GitHub validó y ejecutó el workflow. La recuperación y empaquetado de fuentes dentro del runner siguen en curso.
+El workflow manual .github/workflows/qemu-experimental.yml usa mi-android/ y un runner público estándar Ubuntu 24.04. Obtiene Linux Lab 3a2233b01d65743886413c1f3c3dd76eee931e31, QEMU-Wasm 0ef7b4e2814b231705d8371dd7997f5b72e70baf y SDL 55b03c7493a7abed33cf803d1380a40fa8af903f. Conserva sus parches, incluye los fuentes correspondientes y publica una prerelease. No usa artifacts, cache, Packages, LFS ni Codespaces. [Condiciones de GitHub Actions](https://docs.github.com/en/actions/concepts/billing-and-usage). Android se intentó ejecutar dentro del navegador; el runner sólo compiló. No se instaló un compilador ni Docker en el computador empresarial, ni se habilitaron servicios de pago. No hay APK privados ni archivos particulares en este repositorio.
+
+Para sustituir v86 faltan Android listo, pantalla y entrada funcionales, instalación original con checksum coincidente, apertura e interacción y verificación de RAM dentro del propio Android.
