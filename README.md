@@ -1,6 +1,12 @@
-# Mi Android Online: siguiente compilación experimental
+# Mi Android Online
 
-Paquete preparado el 12 de octubre de 2026. La compilación no se ejecutó y no demuestra un Android más potente funcionando.
+El 12 de octubre de 2026 se inició la primera compilación de QEMU-WebAssembly en GitHub. La fase de compilación terminó correctamente y el empaquetado está en curso. Todavía no se verificaron Android ni APK con ese motor.
+
+- [Entrar al emulador publicado](https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/)
+- [Código fuente completo de la versión 8](https://github.com/JuanPabloRC3901/mi-android-online/releases/tag/source-v8)
+- [Registro de la compilación experimental](https://github.com/JuanPabloRC3901/mi-android-online/actions/runs/38269961724)
+
+El archivo `mi-android-online-codigo.zip` de la release contiene el proyecto del emulador completo. Los archivos mostrados en la raíz del repositorio son la configuración de la nueva compilación.
 
 El workflow se coloca en `.github/workflows/qemu-experimental.yml`; los scripts y notas se colocan en `mi-android/`. Todo se compila en el runner público estándar de GitHub. No se instala nada en el computador empresarial.
 
@@ -12,4 +18,4 @@ El resultado esperado se publica como prerelease, junto con los fuentes correspo
 
 Antes de sustituir v86 se deben comprobar pantalla real, mouse/teclado, arranque completo de Android, instalación de un APK original con checksum idéntico, apertura e interacción. La versión funcional actual sigue disponible en https://mi-android-online-juaramir1.juanpabloramirez.chatgpt.site/ .
 
-Comprobaciones locales: el preparador de flags se ejecutó sobre la configuración upstream; el parche upstream de zlib y allocator se ejecutó sobre su Dockerfile; la descarga fijada de zlib coincidió con SHA256 d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522. No hubo analizador YAML disponible y no se instaló uno. El workflow y la recuperación de fuentes dentro del runner siguen pendientes de ejecución.
+Comprobaciones locales: el preparador de flags se ejecutó sobre la configuración upstream; el parche upstream de zlib y allocator se ejecutó sobre su Dockerfile; la descarga fijada de zlib coincidió con SHA256 d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522. No hubo analizador YAML disponible y no se instaló uno. GitHub validó y ejecutó el workflow. La recuperación y empaquetado de fuentes dentro del runner siguen en curso.
