@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/arm64-experimental.yml'
       - 'arm64-build/**'
+      - '!arm64-build/browser-control.html'
+      - '!arm64-build/README.md'
 permissions:
   contents: read
 concurrency:

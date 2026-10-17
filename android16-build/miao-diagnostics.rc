@@ -1,0 +1,11 @@
+# Diagnóstico de arranque propio, MIT. Sólo imagen efímera de CI.
+# Registro local rotado: sin red, sin credenciales y sin datos de APK del usuario.
+on post-fs-data
+    start miao-boot-log
+
+service miao-boot-log /system/bin/logcat -b all -v threadtime -f /data/local/tmp/miao-boot.log -r 2048 -n 2
+    class core
+    user root
+    group root log system
+    disabled
+    oneshot
