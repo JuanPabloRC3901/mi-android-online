@@ -34,8 +34,10 @@ installed=false
 running=false
 interaction=false
 native_abis=false
+boot_deadline=$((SECONDS + 600))
 for attempt in $(seq 1 120); do
- adb connect 127.0.0.1:15555 >/dev/null 2>&1 || true
+ if [ "$SECONDS" -ge "$boot_deadline" ]; then break;fi
+ timeout 5 adb connect 127.0.0.1:15555 >/dev/null 2>&1 || true
  boot=$(timeout 4 adb -s 127.0.0.1:15555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
  if [ "$boot" = 1 ]; then ready=true;break;fi
  if ! kill -0 "$vm_pid" 2>/dev/null; then break;fi
@@ -67,7 +69,14 @@ if [ "$ready" = true ]; then
  adb -s 127.0.0.1:15555 shell dumpsys activity activities >android16-work/evidence/activity.txt
  adb -s 127.0.0.1:15555 exec-out screencap -p >android16-work/evidence/android16.png
 fi
-timeout 15 adb -s 127.0.0.1:15555 logcat -d >android16-work/evidence/logcat.txt 2>&1 || true
+timeout 8 adb -s 127.0.0.1:15555 shell getprop >android16-work/evidence/properties-after.txt 2>&1 || true
+timeout 15 adb -s 127.0.0.1:15555 logcat -d -b all >android16-work/evidence/logcat.txt 2>&1 || true
+timeout 5 adb -s 127.0.0.1:15555 shell sync >/dev/null 2>&1 || true
+kill "$vm_pid" 2>/dev/null || true
+wait "$vm_pid" 2>/dev/null || true
+trap - EXIT
+mkdir -p android16-work/evidence/tombstones
+debugfs -R "rdump /data/tombstones android16-work/evidence/tombstones" android16-work/root.ext4 >android16-work/evidence/tombstones-extract.txt 2>&1 || true
 printf '{"androidBootedNative":%s,"androidBootedBrowser":false,"apkInstalledNative":%s,"apkExecutedNative":%s,"interactionVerifiedNative":%s,"imageDigest":"%s","kernelRunId":"%s"}\n' "$ready" "$installed" "$running" "$interaction" "$digest" "$KERNEL_RUN_ID" >android16-work/evidence/result.json
 git rev-parse HEAD >android16-work/evidence/recipe-commit.txt
 tail -n 180 android16-work/evidence/serial.log
