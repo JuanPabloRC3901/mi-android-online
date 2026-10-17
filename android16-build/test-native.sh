@@ -34,6 +34,7 @@ installed=false
 running=false
 interaction=false
 native_abis=false
+native_bridge=false
 boot_deadline=$((SECONDS + 600))
 for attempt in $(seq 1 120); do
  if [ "$SECONDS" -ge "$boot_deadline" ]; then break;fi
@@ -66,6 +67,7 @@ if [ "$ready" = true ]; then
    if [ "$running" = true ] && [ -s android16-work/evidence/focus-after.txt ] && ! cmp -s android16-work/evidence/focus-before.txt android16-work/evidence/focus-after.txt; then interaction=true;fi
  fi
  if python3 android16-build/test-probes.py; then native_abis=true;fi
+ if node android16-build/test-android-bridge.mjs; then native_bridge=true;fi
  adb -s 127.0.0.1:15555 shell dumpsys activity activities >android16-work/evidence/activity.txt
  adb -s 127.0.0.1:15555 exec-out screencap -p >android16-work/evidence/android16.png
 fi
@@ -77,7 +79,7 @@ wait "$vm_pid" 2>/dev/null || true
 trap - EXIT
 mkdir -p android16-work/evidence/tombstones
 debugfs -R "rdump /data/tombstones android16-work/evidence/tombstones" android16-work/root.ext4 >android16-work/evidence/tombstones-extract.txt 2>&1 || true
-printf '{"androidBootedNative":%s,"androidBootedBrowser":false,"apkInstalledNative":%s,"apkExecutedNative":%s,"interactionVerifiedNative":%s,"imageDigest":"%s","kernelRunId":"%s"}\n' "$ready" "$installed" "$running" "$interaction" "$digest" "$KERNEL_RUN_ID" >android16-work/evidence/result.json
+printf '{"androidBootedNative":%s,"androidBootedBrowser":false,"apkInstalledNative":%s,"apkExecutedNative":%s,"interactionVerifiedNative":%s,"nativeABIsVerifiedNative":%s,"bridgeVerifiedNative":%s,"imageDigest":"%s","kernelRunId":"%s"}\n' "$ready" "$installed" "$running" "$interaction" "$native_abis" "$native_bridge" "$digest" "$KERNEL_RUN_ID" >android16-work/evidence/result.json
 git rev-parse HEAD >android16-work/evidence/recipe-commit.txt
 tail -n 180 android16-work/evidence/serial.log
 cat android16-work/evidence/result.json
@@ -86,4 +88,4 @@ cp android16-work/control/initrd.gz android16-work/evidence/
 cp android16-build/init-android.c android16-work/evidence/
 
 # Un workflow verde requiere arranque e instalación/interacción reales.
-[ "$ready" = true ] && [ "$installed" = true ] && [ "$running" = true ] && [ "$interaction" = true ] && [ "$native_abis" = true ]
+[ "$ready" = true ] && [ "$installed" = true ] && [ "$running" = true ] && [ "$interaction" = true ] && [ "$native_abis" = true ] && [ "$native_bridge" = true ]

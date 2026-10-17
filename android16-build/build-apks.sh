@@ -41,3 +41,6 @@ PY
 done
 cp android16-build/MainActivity.java android16-build/probe.c android16-work/evidence/
 sha256sum android16-work/evidence/native-probe-*.apk >android16-work/evidence/native-probe-sha256.txt
+
+# El puente estático se prueba dentro del invitado; no se publica este binario.
+"$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang" -static -O2 -Wall -Wextra -Werror android16-build/serial-bridge.c -o android16-work/probe/miao-bridge-arm64
