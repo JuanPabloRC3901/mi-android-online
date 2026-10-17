@@ -1,0 +1,59 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Prueba de motor ARM64 · consola VirtIO</title>
+<style>body{background:#10151b;color:#d5e4f1;font:15px system-ui;margin:24px}button,a{padding:10px;margin:6px;color:#8ee5c7}button{background:#20313d;border:1px solid #4d7185}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px monospace;max-height:60vh;overflow:auto;border:1px solid #38505f;padding:14px}canvas{display:none}.notice{color:#ffcd91}</style>
+<h1>Motor ARM64 compilado para Mi Android Online</h1><p class="notice">Prueba de Linux, Binder y procesos ARM32. Todavía no es Android. No instala ni ejecuta APK.</p>
+<p><a href="?engine=tci">Probar TCI</a><a href="?engine=jit">Probar JIT</a></p>
+<button id="start">Arrancar prueba</button><button id="query" disabled>Consultar CPU y memoria</button><button id="quit" disabled>Detener máquina</button>
+<p id="state">Sin iniciar.</p><pre id="report"></pre><pre id="log"></pre><canvas id="canvas"></canvas>
+<script type="module">
+const engine=new URLSearchParams(location.search).get('engine')==='jit'?'jit':'tci';
+const coreOnly=new URLSearchParams(location.search).has('coreOnly');
+const base='./'+engine+'/runtime/';
+const report={virtioConsole:false,memoryShimVerified:false,rngVerified:false,arm32MemoryShim:false,passed:false,engine,coreOnly,androidBooted:false,apkInstalled:false,apkExecuted:false,init64Started:false,arm64Guest:false,arm32Executed:false,arm32ExitStatus:null,binderProtocols:[],guestRamMiB:768};
+const output=document.querySelector('#log'), status=document.querySelector('#state'),reportView=document.querySelector('#report');
+let input=[],listeners=new Set(),qmpLine='',serialLine='',serial='',startedAt=0,interval;
+function update(){report.elapsedSeconds=startedAt?(performance.now()-startedAt)/1000:0;reportView.textContent=JSON.stringify(report,null,2);}
+function log(s){output.textContent=(output.textContent+s).slice(-200000);}
+function serialData(text){serial+=text;log(text);for(const c of text){if(c==='\n'){const s=serialLine.replace(/\r/g,'');serialLine='';
+if(s.includes('MIAO_ARM|CONSOLE|hvc0'))report.virtioConsole=true;
+if(s.includes('MIAO_ARM|ASHMEM_COMPAT_SIZE|4096'))report.memfdSize=true;
+if(s.includes('MIAO_ARM|ASHMEM_COMPAT_PROTECT|0'))report.memfdProtect=true;
+if(s.includes('MIAO_ARM|ASHMEM_COMPAT_PROT_MASK|5'))report.memfdMask=true;
+if(s.includes('MIAO_ARM|ASHMEM_COMPAT_RESTORE_WRITE|-22'))report.memfdDeniedRestore=true;
+report.memoryShimVerified=!!(report.memfdSize&&report.memfdProtect&&report.memfdMask&&report.memfdDeniedRestore);
+if(s.includes('MIAO_ARM|ARM32_ASHMEM_COMPAT_VERIFIED'))report.arm32MemoryShim=true;
+if(s.includes('MIAO_ARM|HWRNG_BYTES|16'))report.rngVerified=true;
+if(s.includes('MIAO_ARM|INIT64_STARTED'))report.init64Started=true;
+if(s.includes('MIAO_ARM|MACHINE|aarch64'))report.arm64Guest=true;
+if(s.includes('MIAO_ARM|ARM32_EXECUTED'))report.arm32Executed=true;
+let m=s.match(/MIAO_ARM\|ARM32_STATUS\|(-?\d+)/);if(m)report.arm32ExitStatus=Number(m[1]);
+m=s.match(/MIAO_ARM\|BINDER_PROTOCOL\|(\d+)/);if(m)report.binderProtocols.push(Number(m[1]));
+if(s.includes('MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED')){report.controlComplete=true;report.passed=report.virtioConsole&&report.init64Started&&report.arm64Guest&&report.arm32Executed&&report.arm32ExitStatus===0&&report.binderProtocols.length===3&&report.binderProtocols.every(v=>v===8)&&report.memoryShimVerified&&report.arm32MemoryShim&&report.rngVerified;report.controlCompletedAtSeconds=(performance.now()-startedAt)/1000;status.textContent=report.passed?'Núcleo, memoria ARM32/64, Binder y RNG comprobados. Android aún no iniciado.':'Terminó la prueba con comprobaciones pendientes. Revisar el registro.';}
+}else serialLine+=c;}update();}
+function qmpData(bytes){const text=new TextDecoder().decode(Uint8Array.from(bytes));for(const c of text){if(c==='\n'){try{const msg=JSON.parse(qmpLine.trim());if(typeof msg.return==='string')serialData(msg.return);else{if(msg.id==='memory')report.memory=msg.return;if(msg.id==='cpu')report.cpu=msg.return;if(msg.id==='status')report.machineStatus=msg.return;if(msg.error){report.lastQmpError=msg;log(qmpLine+'\n');}}}catch{log(qmpLine+'\n');}qmpLine='';}else qmpLine+=c;}update();}
+function send(msg){input.push(...new TextEncoder().encode(JSON.stringify(msg)+'\n'));for(const fn of listeners)fn();}
+let termios={iflag:0,oflag:0,cflag:0x00bf,lflag:0,cc:new Array(32).fill(0)};
+const pty={get readable(){return input.length>0},writable:true,read:n=>input.splice(0,n??input.length),write:qmpData,onReadable:fn=>{listeners.add(fn);return{dispose(){listeners.delete(fn)}}},onSignal:()=>({dispose(){}}),ioctl:(r,v)=>{if(r==='TIOCGWINSZ')return[100,30];if(r==='TCGETS')return termios;if(r==='TCSETS'){termios=v;return}throw Error('ioctl '+r)}};
+document.querySelector('#query').onclick=()=>{send({execute:'query-status',id:'status'});send({execute:'query-memory-size-summary',id:'memory'});send({execute:'query-cpus-fast',id:'cpu'});};
+document.querySelector('#quit').onclick=()=>{send({execute:'quit'});clearInterval(interval);report.stopRequested=true;status.textContent='Detención solicitada; cierra esta pestaña para liberar su memoria.';update();};
+document.querySelector('#start').onclick=async()=>{
+document.querySelector('#start').disabled=true;startedAt=performance.now();status.textContent='Cargando nuestra compilación ARM64…';
+try{
+const files={};
+for(const name of (coreOnly?[]:['Image','initrd.gz'])){const r=await fetch('./kernel-39078667940/'+name);if(!r.ok)throw Error(name+' HTTP '+r.status);files[name]=new Uint8Array(await r.arrayBuffer());}
+const config={arguments:['-machine','virt,gic-version=2','-cpu','cortex-a57','-m','768M','-smp','1','-accel','tcg,thread=single,tb-size=64','-device','virtio-rng-pci','-nodefaults','-display','none','-monitor','none','-chardev','ringbuf,id=uart,size=1048576','-serial','none','-device','virtio-serial-pci','-device','virtconsole,chardev=uart','-qmp','stdio','-no-reboot',...(coreOnly?['-S']:['-kernel','/Image','-initrd','/initrd.gz','-append','console=hvc0 rdinit=/init panic=-1 nokaslr loglevel=7'])],
+canvas:document.querySelector('#canvas'),pty,mainScriptUrlOrBlob:new URL(base+'out.js',location.href).href,
+locateFile:n=>new URL(base+n,location.href).href,
+print:s=>log(s+'\n'),printErr:s=>log(s+'\n'),onAbort:s=>{report.error=String(s);status.textContent='El motor informó un error.';update();},
+preRun:[m=>{for(const[name,b]of Object.entries(files))m.FS.writeFile('/'+name,b);} ]};
+window.Module=config;
+await new Promise((ok,fail)=>{const s=document.createElement('script');s.src=base+'load.js';s.onload=ok;s.onerror=fail;document.head.append(s);});
+const {default:create}=await import(base+'out.js');window.qemu=await create(config);report.moduleLoaded=true;status.textContent=coreOnly?'Motor cargado, CPU pausada. Sólo consulta del hardware virtual.':'Motor cargado; esperando las respuestas del núcleo real.';
+send({execute:'qmp_capabilities'});setTimeout(()=>{send({execute:'query-memory-size-summary',id:'memory'});send({execute:'query-cpus-fast',id:'cpu'});},1000);
+interval=setInterval(()=>send({execute:'ringbuf-read',arguments:{device:'uart',size:65536,format:'utf8'}}),1500);
+document.querySelector('#query').disabled=false;document.querySelector('#quit').disabled=false;
+}catch(e){report.error=String(e);status.textContent='No se pudo iniciar la prueba.';log(String(e));}
+update();};
+window.addEventListener('error',e=>{report.windowError=e.message;update();});window.addEventListener('unhandledrejection',e=>{report.unhandledRejection=String(e.reason);update();});
+setInterval(update,1000);update();
+</script></html>
+

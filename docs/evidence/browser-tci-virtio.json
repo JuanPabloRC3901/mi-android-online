@@ -1,0 +1,48 @@
+{
+  "virtioConsole": true,
+  "memoryShimVerified": true,
+  "rngVerified": true,
+  "arm32MemoryShim": true,
+  "passed": true,
+  "engine": "tci",
+  "coreOnly": false,
+  "androidBooted": false,
+  "apkInstalled": false,
+  "apkExecuted": false,
+  "init64Started": true,
+  "arm64Guest": true,
+  "arm32Executed": true,
+  "arm32ExitStatus": 0,
+  "binderProtocols": [
+    8,
+    8,
+    8
+  ],
+  "guestRamMiB": 768,
+  "elapsedSeconds": 50.38441500000004,
+  "moduleLoaded": true,
+  "memory": {
+    "base-memory": 805306368,
+    "plugged-memory": 0
+  },
+  "cpu": [
+    {
+      "thread-id": 42,
+      "props": {
+        "core-id": 0,
+        "thread-id": 0,
+        "socket-id": 0,
+        "cluster-id": 0
+      },
+      "qom-path": "/machine/unattached/device[0]",
+      "cpu-index": 0,
+      "target": "aarch64"
+    }
+  ],
+  "memfdSize": true,
+  "memfdProtect": true,
+  "memfdMask": true,
+  "memfdDeniedRestore": true,
+  "controlComplete": true,
+  "controlCompletedAtSeconds": 24.53243499999959
+}
