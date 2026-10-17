@@ -66,6 +66,7 @@ jobs:
       - name: Compilar Linux con Binder y verificar procesos ARM64 y ARM32
         run: bash arm64-build/build-kernel.sh
       - name: Publicar núcleo, prueba y fuentes correspondientes
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

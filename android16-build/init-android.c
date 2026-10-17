@@ -1,5 +1,7 @@
 /* MIT. Diagnóstico propio, sin libc. NO es Android ni ejecuta APK. */
 typedef unsigned long usize;
+void* memset(void*d,int c,usize n){volatile unsigned char*p=d;for(usize i=0;i<n;i++)p[i]=(unsigned char)c;return d;}
+void* memcpy(void*d,const void*s,usize n){volatile unsigned char*p=d;const volatile unsigned char*q=s;for(usize i=0;i<n;i++)p[i]=q[i];return d;}
 static long call(long n,long a,long b,long c,long d,long e,long f) {
  register long x0 __asm__("x0")=a,x1 __asm__("x1")=b,x2 __asm__("x2")=c;
  register long x3 __asm__("x3")=d,x4 __asm__("x4")=e,x5 __asm__("x5")=f;
@@ -19,12 +21,17 @@ static int contains(const char*s,const char*q){for(;*s;s++){usize i=0;while(q[i]
 static void poweroff(void){call(142,0xfee1dead,672274793,0x4321fedc,0,0,0);}
 static void binder(void){
  directory("/dev/binderfs");line("MIAO_ARM|BINDERFS_MOUNT|",mountfs("binder","/dev/binderfs"));
+ long ctl=openfile("/dev/binderfs/binder-control",2);
+ const char* names[]={"binder","hwbinder","vndbinder"};
  const char* paths[]={"/dev/binder","/dev/hwbinder","/dev/vndbinder"};
+ const char* targets[]={"/dev/binderfs/binder","/dev/binderfs/hwbinder","/dev/binderfs/vndbinder"};
  for(int i=0;i<3;i++){
+  if(ctl>=0){struct {char name[256];unsigned int major,minor;}dev={0};for(int j=0;names[i][j];j++)dev.name[j]=names[i][j];line("MIAO_ARM|BINDER_CREATE|",call(29,ctl,0xc1086201,(long)&dev,0,0,0));call(36,(long)targets[i],-100,(long)paths[i],0,0,0);}
   long fd=openfile(paths[i],2);
   out("MIAO_ARM|BINDER_OPEN|");out(paths[i]);out("|");number(fd);out("\n");
   if(fd>=0){int version=0;long r=call(29,fd,0xc0046209,(long)&version,0,0,0);line("MIAO_ARM|BINDER_VERSION_RESULT|",r);line("MIAO_ARM|BINDER_PROTOCOL|",version);call(57,fd,0,0,0,0,0);}
  }
+ if(ctl>=0)call(57,ctl,0,0,0,0,0);
 }
 static void compat(void){
  long pid=call(220,17,0,0,0,0,0);
