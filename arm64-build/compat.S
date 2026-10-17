@@ -38,8 +38,8 @@ _start:
  cmp r0,#5
  bne failed
  mov r0,#1
- ldr r1,=message
- ldr r2,=message_end-message
+ ldr r1,=miao_message
+ mov r2,#miao_message_length
  mov r7,#4
  svc #0
  mov r0,#0
@@ -51,6 +51,6 @@ failed:
  svc #0
 .section .rodata
 name: .asciz "miao-arm32"
-message: .ascii "MIAO_ARM|ARM32_EXECUTED\nMIAO_ARM|ARM32_ASHMEM_COMPAT_VERIFIED\n"
-message_end:
+miao_message: .ascii "MIAO_ARM|ARM32_EXECUTED\nMIAO_ARM|ARM32_ASHMEM_COMPAT_VERIFIED\n"
+.equ miao_message_length, . - miao_message
 .section .note.GNU-stack,"",%progbits
