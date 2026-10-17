@@ -44,6 +44,7 @@ static void bootAndroid(void){
  directory("/android-root");
  long rc=call(40,(long)"/dev/vda",(long)"/android-root",(long)"ext4",0,0,0);line("MIAO_ANDROID|ROOT_MOUNT|",rc);if(rc<0)return;
  directory("/android-root/proc");directory("/android-root/sys");directory("/android-root/dev");directory("/android-root/data");directory("/android-root/cache");
+ line("MIAO_ANDROID|BOOTSTRAP_APEX_DIRECTORY|",call(34,-100,(long)"/android-root/bootstrap-apex",0755,0,0,0));
  long fd=call(198,2,2,0,0,0,0);if(fd>=0){netaddr(fd,0x8916,10,0,2,15);netaddr(fd,0x891c,255,255,255,0);unsigned char req[40]={0};const char*n="eth0";for(int i=0;n[i];i++)req[i]=n[i];req[16]=0x43;line("MIAO_ANDROID|NET_UP|",call(29,fd,0x8914,(long)req,0,0,0));call(57,fd,0,0,0,0,0);}
  line("MIAO_ANDROID|MOVE_PROC|",call(40,(long)"/proc",(long)"/android-root/proc",0,8192,0,0));
  line("MIAO_ANDROID|MOVE_SYS|",call(40,(long)"/sys",(long)"/android-root/sys",0,8192,0,0));
