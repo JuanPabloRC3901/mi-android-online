@@ -49,7 +49,10 @@ static void bootAndroid(void){
  line("MIAO_ANDROID|MOVE_PROC|",call(40,(long)"/proc",(long)"/android-root/proc",0,8192,0,0));
  line("MIAO_ANDROID|MOVE_SYS|",call(40,(long)"/sys",(long)"/android-root/sys",0,8192,0,0));
  line("MIAO_ANDROID|MOVE_DEV|",call(40,(long)"/dev",(long)"/android-root/dev",0,8192,0,0));
- line("MIAO_ANDROID|CHROOT|",call(51,(long)"/android-root",0,0,0,0,0));call(49,(long)"/",0,0,0,0,0);
+ // switch_root real: el nuevo sistema debe ser la raíz del namespace, no sólo un chroot bajo el initramfs.
+ line("MIAO_ANDROID|CHDIR_NEW_ROOT|",call(49,(long)"/android-root",0,0,0,0,0));
+ long moved=call(40,(long)".",(long)"/",0,8192,0,0);line("MIAO_ANDROID|SWITCH_ROOT_MOVE|",moved);if(moved<0)return;
+ line("MIAO_ANDROID|CHROOT|",call(51,(long)".",0,0,0,0,0));call(49,(long)"/",0,0,0,0,0);
  const char *args[]={"/init","qemu=1","androidboot.hardware=redroid","androidboot.use_memfd=true","androidboot.redroid_gpu_mode=guest","androidboot.redroid_width=800","androidboot.redroid_height=600","androidboot.redroid_dpi=160","androidboot.redroid_fps=10","androidboot.console=ttyAMA0","ro.setupwizard.mode=DISABLED",0};
  const char *env[]={"PATH=/system/bin:/vendor/bin","ANDROID_ROOT=/system","ANDROID_DATA=/data",0};
  out("MIAO_ANDROID|EXEC_INIT_ATTEMPT\n");line("MIAO_ANDROID|EXEC_INIT_ERROR|",call(221,(long)"/init",(long)args,(long)env,0,0,0));

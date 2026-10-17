@@ -2,11 +2,12 @@
 from pathlib import Path
 import hashlib,json,os
 root=Path("android16-work/rootfs")
-paths=["init","system/bin/init","system/build.prop","vendor/build.prop","system/etc/init/hw/init.rc","vendor/etc/init/hw/init.redroid.rc"]
+paths=["bootstrap-apex","apex","linkerconfig","mnt","init","system/bin/init","system/build.prop","vendor/build.prop","system/etc/init/hw/init.rc","vendor/etc/init/hw/init.redroid.rc"]
 out={"rootEntries":sorted(p.name for p in root.iterdir())}
 for name in paths:
  p=root/name
  if p.is_symlink():out[name]={"symlink":os.readlink(p)}
+ elif p.is_dir():out[name]={"directory":True}
  elif p.is_file():
   b=p.read_bytes()
   out[name]={"bytes":len(b),"sha256":hashlib.sha256(b).hexdigest()}
