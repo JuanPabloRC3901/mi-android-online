@@ -7,7 +7,8 @@ container="miao-android16-inspect-$GITHUB_RUN_ID"
 docker create --platform linux/arm64 --name "$container" "redroid/redroid@$digest" >/dev/null
 docker export "$container" | sudo tar -xf - -C android16-work/rootfs
 docker rm "$container" >/dev/null
-python3 android16-build/inspect.py
+sudo python3 android16-build/inspect.py
+sudo chown "$(id -u):$(id -g)" android16-work/evidence/image-inspection.json
 # El sistema de upstream sólo se usa para esta prueba privada efímera, no se publica como asset.
 truncate -s 6G android16-work/root.ext4
 sudo mke2fs -q -t ext4 -F -d android16-work/rootfs -L MIAO_ANDROID16 android16-work/root.ext4
