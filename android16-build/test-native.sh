@@ -60,6 +60,7 @@ if [ "$ready" = true ]; then
    grep -E '(mResumedActivity|topResumedActivity).*io.appium.android.apis' android16-work/evidence/activity-after.txt >android16-work/evidence/focus-after.txt || true
    if [ "$running" = true ] && [ -s android16-work/evidence/focus-after.txt ] && ! cmp -s android16-work/evidence/focus-before.txt android16-work/evidence/focus-after.txt; then interaction=true;fi
  fi
+ python3 android16-build/test-probes.py
  adb -s 127.0.0.1:15555 shell dumpsys activity activities >android16-work/evidence/activity.txt
  adb -s 127.0.0.1:15555 exec-out screencap -p >android16-work/evidence/android16.png
 fi

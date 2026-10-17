@@ -26,6 +26,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu qemu-system-arm e2fsprogs adb
+      - name: Compilar APK propios ARM64 y ARM32 con herramientas preinstaladas
+        run: bash android16-build/build-apks.sh
       - name: Probar Android 16 ARM64 con nuestro núcleo
         env:
           GH_TOKEN: ${{ github.token }}
