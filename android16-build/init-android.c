@@ -13,7 +13,7 @@ static usize length(const char*s){usize n=0;while(s[n])n++;return n;}
 static void out(const char*s){call(64,1,(long)s,length(s),0,0,0);}
 static void number(long n){char s[32];int i=31;s[i]=0;unsigned long u=n<0?-n:n;do{s[--i]='0'+u%10;u/=10;}while(u);if(n<0)s[--i]='-';out(s+i);}
 static void line(const char*k,long v){out(k);number(v);out("\n");}
-static long openfile(const char*p,long flags){return call(56,-100,(long)p,flags,0,0,0);}
+static long openfile(const char*p,long flags){return call(56,-100,(long)p,flags|0x80000,0,0,0);}
 static void show(const char*p){char b[1024];long fd=openfile(p,0);if(fd<0){line("MIAO_ARM|OPEN_ERROR|",fd);return;}long n=call(63,fd,(long)b,sizeof(b)-1,0,0,0);if(n>0){b[n]=0;out(b);}call(57,fd,0,0,0,0,0);}
 static void directory(const char*p){call(34,-100,(long)p,0755,0,0,0);}
 static long mountfs(const char*type,const char*dst){return call(40,(long)type,(long)dst,(long)type,0,0,0);}
@@ -68,7 +68,7 @@ static void bootAndroid(void){
 __attribute__((noreturn)) void _start(void){
  directory("/proc");directory("/sys");directory("/dev");
  mountfs("proc","/proc");mountfs("sysfs","/sys");mountfs("devtmpfs","/dev");
- long fd=openfile("/dev/console",2);if(fd>=0)for(int i=0;i<3;i++)call(24,fd,i,0,0,0,0);
+ long fd=openfile("/dev/console",2);if(fd>=0){for(int i=0;i<3;i++)if(i!=fd)call(24,fd,i,0,0,0,0);if(fd>2)call(57,fd,0,0,0,0,0);else call(25,fd,2,0,0,0,0);}
  out("MIAO_ARM|INIT64_STARTED\n");char uts[390];if(call(160,(long)uts,0,0,0,0,0)==0){out("MIAO_ARM|KERNEL|");out(uts+130);out("\nMIAO_ARM|MACHINE|");out(uts+260);out("\n");}
  show("/proc/meminfo");binder();compat();
  out("MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED\n");
