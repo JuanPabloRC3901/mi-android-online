@@ -1,0 +1,76 @@
+name: Mi Android - ARM64 y núcleo Android experimental
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/arm64-experimental.yml'
+      - 'arm64-build/**'
+permissions:
+  contents: read
+concurrency:
+  group: mi-android-arm64-experimental
+  cancel-in-progress: false
+jobs:
+  runtime:
+    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [tci, jit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/checkout@v4
+        with:
+          repository: dbontr/linux-lab
+          ref: 3a2233b01d65743886413c1f3c3dd76eee931e31
+          path: qemu-source
+          persist-credentials: false
+      - name: Compilar QEMU-Wasm ARM64 desde fuentes
+        run: |
+          node arm64-build/prepare.mjs qemu-source ${{ matrix.engine }}
+          bash qemu-source/runtime-build/qemu/build.sh "$GITHUB_WORKSPACE/qemu-artifact"
+      - name: Empaquetar binario y fuentes correspondientes
+        run: bash arm64-build/package-runtime.sh
+      - name: Publicar motor experimental, sin afirmar que Android funciona
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          gh release create "mi-android-arm64-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${ENGINE}" \
+            qemu-experimental.tar.gz qemu-corresponding-source.tar.gz SHA256SUMS-experimental \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "ARM64 ${ENGINE} - compilación ${GITHUB_RUN_ID}" --notes-file arm64-build/README.md
+  kernel:
+    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Preparar herramientas sólo en el runner efímero de GitHub
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf make flex bison libssl-dev libelf-dev bc qemu-system-arm xz-utils
+      - name: Compilar Linux con Binder y verificar procesos ARM64 y ARM32
+        run: bash arm64-build/build-kernel.sh
+      - name: Publicar núcleo, prueba y fuentes correspondientes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "mi-android-arm64-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-kernel" \
+            arm64-kernel.tar.gz arm64-kernel-source.tar.gz SHA256SUMS-arm64-kernel \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "ARM64 - núcleo propio con Binder ${GITHUB_RUN_ID}" --notes-file arm64-build/README.md
+# Sólo runners públicos estándar: compilaciones y pruebas efímeras; sin hosting de emulación.
