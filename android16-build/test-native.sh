@@ -86,6 +86,7 @@ debugfs -R "rdump /data/system/dropbox android16-work/evidence/dropbox" android1
 for name in miao-boot.log miao-boot.log.1 miao-boot.log.2; do
  debugfs -R "dump /data/local/tmp/$name android16-work/evidence/boot-logs/$name" android16-work/root.ext4 >>android16-work/evidence/boot-log-extract.txt 2>&1 || true
 done
+python3 android16-build/summarize-crashes.py
 printf '{"androidBootedNative":%s,"androidBootedBrowser":false,"apkInstalledNative":%s,"apkExecutedNative":%s,"interactionVerifiedNative":%s,"nativeABIsVerifiedNative":%s,"bridgeVerifiedNative":%s,"imageDigest":"%s","kernelRunId":"%s"}\n' "$ready" "$installed" "$running" "$interaction" "$native_abis" "$native_bridge" "$digest" "$KERNEL_RUN_ID" >android16-work/evidence/result.json
 git rev-parse HEAD >android16-work/evidence/recipe-commit.txt
 tail -n 180 android16-work/evidence/serial.log
