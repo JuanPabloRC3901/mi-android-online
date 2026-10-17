@@ -70,6 +70,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          test -f arm64-kernel.tar.gz || exit 0
           gh release create "mi-android-arm64-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-kernel" \
             arm64-kernel.tar.gz arm64-kernel-source.tar.gz SHA256SUMS-arm64-kernel \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \

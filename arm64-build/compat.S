@@ -15,3 +15,5 @@ _start:
 message:
  .ascii "MIAO_ARM|ARM32_EXECUTED\n"
 message_end:
+
+.section .note.GNU-stack,"",%progbits

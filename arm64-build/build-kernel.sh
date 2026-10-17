@@ -16,8 +16,6 @@ make O=build olddefconfig
 for flag in COMPAT BINFMT_ELF ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE DEVTMPFS VIRTIO_BLK EXT4_FS SERIAL_AMBA_PL011_CONSOLE ARM_GIC ARM_PSCI_FW; do
   grep -qx "CONFIG_$flag=y" build/.config || { echo "Falta CONFIG_$flag"; exit 1; }
 done
-make O=build -j"$(nproc)" Image
-cp build/arch/arm64/boot/Image "$OUT/Image"
 cp build/.config "$OUT/kernel.config"
 cp COPYING "$OUT/COPYING.kernel"
 cp "$ROOT/arm64-build/init.c" "$OUT/init.c"
@@ -25,6 +23,8 @@ cp "$ROOT/arm64-build/compat.S" "$OUT/compat.S"
 aarch64-linux-gnu-gcc -Os -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -static -Wl,--build-id=none -Wl,-e,_start "$OUT/init.c" -o "$OUT/init64"
 arm-linux-gnueabihf-gcc -nostdlib -static -Wl,--build-id=none -Wl,-e,_start "$OUT/compat.S" -o "$OUT/arm32-probe"
 python3 "$ROOT/arm64-build/pack-initrd.py" "$OUT"
+make O=build -j"$(nproc)" Image
+cp build/arch/arm64/boot/Image "$OUT/Image"
 printf '%s\n' 'Android no arrancado: esto es un núcleo y una prueba de arquitectura/Binder.' > "$OUT/VALIDACION.txt"
 set +e
 timeout 90 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 1 -m 768 -nodefaults -display none -serial stdio -monitor none -nic none -no-reboot -kernel "$OUT/Image" -initrd "$OUT/initrd.gz" -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr miao.autopoweroff=1" > "$OUT/native-control.log" 2>&1
