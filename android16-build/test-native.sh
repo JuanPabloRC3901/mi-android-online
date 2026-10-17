@@ -24,7 +24,7 @@ cp android16-work/kernel/arm64-kernel/arm32-probe android16-work/control/arm32-p
 python3 arm64-build/pack-initrd.py android16-work/control
 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 2 -m 2048 -nodefaults -display none -monitor none -serial file:android16-work/evidence/serial.log -no-reboot \
  -kernel android16-work/kernel/arm64-kernel/Image -initrd android16-work/control/initrd.gz \
- -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr selinux=0 miao.android=1" \
+ -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr selinux=0 printk.devkmsg=on loglevel=7 miao.android=1" \
  -drive file=android16-work/root.ext4,if=none,id=system,format=raw -device virtio-blk-pci,drive=system \
  -netdev user,id=net0,hostfwd=tcp:127.0.0.1:15555-:5555 -device virtio-net-pci,netdev=net0,romfile= >android16-work/evidence/qemu.log 2>&1 &
 vm_pid=$!
@@ -73,3 +73,6 @@ cat android16-work/evidence/result.json
 # Preservar sólo evidencia, recetas y nuestro initrd. No publicar el sistema upstream ni archivos privados.
 cp android16-work/control/initrd.gz android16-work/evidence/
 cp android16-build/init-android.c android16-work/evidence/
+
+# Un workflow verde requiere arranque e instalación/interacción reales.
+[ "$ready" = true ] && [ "$installed" = true ] && [ "$running" = true ] && [ "$interaction" = true ]
