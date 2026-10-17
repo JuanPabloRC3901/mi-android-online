@@ -33,11 +33,13 @@ ready=false
 installed=false
 running=false
 interaction=false
+native_abis=false
 for attempt in $(seq 1 120); do
  adb connect 127.0.0.1:15555 >/dev/null 2>&1 || true
  boot=$(timeout 4 adb -s 127.0.0.1:15555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
  if [ "$boot" = 1 ]; then ready=true;break;fi
  if ! kill -0 "$vm_pid" 2>/dev/null; then break;fi
+ if [ $((attempt % 12)) -eq 0 ]; then echo "Esperando Android, intento $attempt/120";tail -n 35 android16-work/evidence/serial.log;fi
  sleep 5
 done
 if [ "$ready" = true ]; then
@@ -61,7 +63,7 @@ if [ "$ready" = true ]; then
    grep -E '(mResumedActivity|topResumedActivity).*io.appium.android.apis' android16-work/evidence/activity-after.txt >android16-work/evidence/focus-after.txt || true
    if [ "$running" = true ] && [ -s android16-work/evidence/focus-after.txt ] && ! cmp -s android16-work/evidence/focus-before.txt android16-work/evidence/focus-after.txt; then interaction=true;fi
  fi
- python3 android16-build/test-probes.py
+ if python3 android16-build/test-probes.py; then native_abis=true;fi
  adb -s 127.0.0.1:15555 shell dumpsys activity activities >android16-work/evidence/activity.txt
  adb -s 127.0.0.1:15555 exec-out screencap -p >android16-work/evidence/android16.png
 fi
@@ -75,4 +77,4 @@ cp android16-work/control/initrd.gz android16-work/evidence/
 cp android16-build/init-android.c android16-work/evidence/
 
 # Un workflow verde requiere arranque e instalación/interacción reales.
-[ "$ready" = true ] && [ "$installed" = true ] && [ "$running" = true ] && [ "$interaction" = true ]
+[ "$ready" = true ] && [ "$installed" = true ] && [ "$running" = true ] && [ "$interaction" = true ] && [ "$native_abis" = true ]

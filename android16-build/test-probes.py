@@ -39,3 +39,6 @@ for mode,abi in [("arm64","arm64-v8a"),("arm32","armeabi-v7a")]:
  results.append(result)
 (out/"native-probes.json").write_text(json.dumps(results,indent=2))
 print(json.dumps(results,indent=2))
+
+# El resultado del proceso exige ambas ABI y una interacción real con JNI.
+raise SystemExit(0 if all(r["installed"] and r["running"] and r["interactionVerified"] for r in results) else 1)
