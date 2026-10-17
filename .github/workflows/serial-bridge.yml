@@ -24,7 +24,7 @@ jobs:
       - name: Compilar puente ARM64 con NDK ya preinstalado
         run: |
           ndk="${ANDROID_NDK_HOME:-${ANDROID_NDK:-}}"
-          cc="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
+          cc="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang"
           test -x "$cc"
           "$cc" -static -O2 -Wall -Wextra -Werror -Wl,-z,max-page-size=16384 android16-build/serial-bridge.c -o miao-bridge-arm64
           "$cc" -static -O2 -Wall -Wextra -Werror '-DMIAO_UPLOAD_DIR="/tmp/miao-bridge-ci"' android16-build/serial-bridge.c -o miao-bridge-test
