@@ -45,6 +45,12 @@ static void bootAndroid(void){
  long rc=call(40,(long)"/dev/vda",(long)"/android-root",(long)"ext4",0,0,0);line("MIAO_ANDROID|ROOT_MOUNT|",rc);if(rc<0)return;
  // Android necesita el nombre de dispositivo usado por APEX, además del nombre de devtmpfs.
  line("MIAO_ANDROID|DEVICE_MAPPER_ALIAS|",call(36,(long)"/dev/mapper/control",-100,(long)"/dev/device-mapper",0,0,0));
+ line("MIAO_ANDROID|HW_RANDOM_ALIAS|",call(36,(long)"/dev/hwrng",-100,(long)"/dev/hw_random",0,0,0));
+ const char* binder_paths[]={"/dev/binder","/dev/hwbinder","/dev/vndbinder"};
+ for(int i=0;i<3;i++)line("MIAO_ANDROID|BINDER_PERMISSIONS|",call(53,-100,(long)binder_paths[i],0666,0,0,0));
+ line("MIAO_ANDROID|DMA_HEAP_OWNER|",call(54,-100,(long)"/dev/dma_heap/system",1000,1003,0,0));
+ line("MIAO_ANDROID|DMA_HEAP_MODE|",call(53,-100,(long)"/dev/dma_heap/system",0660,0,0,0));
+
  directory("/android-root/proc");directory("/android-root/sys");directory("/android-root/dev");directory("/android-root/data");directory("/android-root/cache");
  line("MIAO_ANDROID|BOOTSTRAP_APEX_DIRECTORY|",call(34,-100,(long)"/android-root/bootstrap-apex",0755,0,0,0));
  long fd=call(198,2,2,0,0,0,0);if(fd>=0){netaddr(fd,0x8916,10,0,2,15);netaddr(fd,0x891c,255,255,255,0);unsigned char req[40]={0};const char*n="eth0";for(int i=0;n[i];i++)req[i]=n[i];req[16]=0x43;line("MIAO_ANDROID|NET_UP|",call(29,fd,0x8914,(long)req,0,0,0));call(57,fd,0,0,0,0,0);}
@@ -55,7 +61,7 @@ static void bootAndroid(void){
  line("MIAO_ANDROID|CHDIR_NEW_ROOT|",call(49,(long)"/android-root",0,0,0,0,0));
  long moved=call(40,(long)".",(long)"/",0,8192,0,0);line("MIAO_ANDROID|SWITCH_ROOT_MOVE|",moved);if(moved<0)return;
  line("MIAO_ANDROID|CHROOT|",call(51,(long)".",0,0,0,0,0));call(49,(long)"/",0,0,0,0,0);
- const char *args[]={"/init","qemu=1","androidboot.hardware=redroid","androidboot.use_memfd=true","androidboot.redroid_gpu_mode=guest","androidboot.redroid_width=800","androidboot.redroid_height=600","androidboot.redroid_dpi=160","androidboot.redroid_fps=10","ro.cold_boot_done=false","ro.setupwizard.mode=DISABLED",0};
+ const char *args[]={"/init","qemu=1","androidboot.hardware=redroid","androidboot.use_memfd=true","androidboot.redroid_gpu_mode=guest","androidboot.redroid_width=800","androidboot.redroid_height=600","androidboot.redroid_dpi=160","androidboot.redroid_fps=10","ro.setupwizard.mode=DISABLED",0};
  const char *env[]={"PATH=/system/bin:/vendor/bin","ANDROID_ROOT=/system","ANDROID_DATA=/data",0};
  out("MIAO_ANDROID|EXEC_INIT_ATTEMPT\n");line("MIAO_ANDROID|EXEC_INIT_ERROR|",call(221,(long)"/init",(long)args,(long)env,0,0,0));
 }

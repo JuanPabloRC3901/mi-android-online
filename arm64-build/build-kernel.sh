@@ -10,10 +10,11 @@ echo "$SHA  $ROOT/linux-$VERSION.tar.xz" | sha256sum -c -
 tar -xJf "$ROOT/linux-$VERSION.tar.xz" -C "$ROOT/arm64-kernel-source" --strip-components=1
 cd "$ROOT/arm64-kernel-source"
 export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+python3 "$ROOT/arm64-build/apply-android-memory.py" "$ROOT/arm64-kernel-source"
 make O=build tinyconfig
 scripts/kconfig/merge_config.sh -m -O build build/.config "$ROOT/arm64-build/kernel.config"
 make O=build olddefconfig
-for flag in COMPAT BINFMT_ELF ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE DEVTMPFS VIRTIO_BLK EXT4_FS SERIAL_AMBA_PL011_CONSOLE ARM_GIC ARM_PSCI_FW; do
+for flag in MEMFD_ASHMEM_SHIM HW_RANDOM HW_RANDOM_VIRTIO COMPAT BINFMT_ELF ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE DEVTMPFS VIRTIO_BLK EXT4_FS SERIAL_AMBA_PL011_CONSOLE ARM_GIC ARM_PSCI_FW; do
   grep -qx "CONFIG_$flag=y" build/.config || { echo "Falta CONFIG_$flag"; exit 1; }
 done
 cp build/.config "$OUT/kernel.config"
@@ -27,13 +28,13 @@ make O=build -j"$(nproc)" Image
 cp build/arch/arm64/boot/Image "$OUT/Image"
 printf '%s\n' 'Android no arrancado: esto es un núcleo y una prueba de arquitectura/Binder.' > "$OUT/VALIDACION.txt"
 set +e
-timeout 90 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 1 -m 768 -nodefaults -display none -serial stdio -monitor none -nic none -no-reboot -kernel "$OUT/Image" -initrd "$OUT/initrd.gz" -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr miao.autopoweroff=1" > "$OUT/native-control.log" 2>&1
+timeout 90 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 1 -m 768 -nodefaults -display none -serial stdio -monitor none -nic none -device virtio-rng-pci -no-reboot -kernel "$OUT/Image" -initrd "$OUT/initrd.gz" -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr miao.autopoweroff=1" > "$OUT/native-control.log" 2>&1
 status=$?
 set -e
 cat "$OUT/native-control.log"
 verified=true
 if [ "$status" != 0 ]; then verified=false;fi
-for marker in 'MIAO_ARM|INIT64_STARTED' 'MIAO_ARM|MACHINE|aarch64' 'MIAO_ARM|ARM32_EXECUTED' 'MIAO_ARM|ARM32_STATUS|0' 'MIAO_ARM|BINDER_PROTOCOL|8' 'MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED'; do
+for marker in 'MIAO_ARM|INIT64_STARTED' 'MIAO_ARM|MACHINE|aarch64' 'MIAO_ARM|ARM32_EXECUTED' 'MIAO_ARM|ARM32_STATUS|0' 'MIAO_ARM|BINDER_PROTOCOL|8' 'MIAO_ARM|ASHMEM_COMPAT_SIZE|4096' 'MIAO_ARM|ASHMEM_COMPAT_PROTECT|0' 'MIAO_ARM|ASHMEM_COMPAT_PROT_MASK|5' 'MIAO_ARM|ASHMEM_COMPAT_RESTORE_WRITE|-22' 'MIAO_ARM|ARM32_ASHMEM_COMPAT_VERIFIED' 'MIAO_ARM|HWRNG_BYTES|16' 'MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED'; do
  if ! grep -q "$marker" "$OUT/native-control.log"; then verified=false;fi
 done
 printf '{"nativeControlVerified":%s,"qemuExit":%s,"androidBooted":false,"apkInstalled":false}\n' "$verified" "$status" > "$OUT/native-result.json"

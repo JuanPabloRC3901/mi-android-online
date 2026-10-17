@@ -39,12 +39,22 @@ static void compat(void){
  if(pid>0){int status=0;long r=call(260,pid,(long)&status,0,0,0,0);line("MIAO_ARM|ARM32_WAIT|",r);line("MIAO_ARM|ARM32_STATUS|",status);}
  else line("MIAO_ARM|CLONE_ERROR|",pid);
 }
+static void memory_compat(void){
+ long fd=call(279,(long)"miao-compat",3,0,0,0,0);line("MIAO_ARM|MEMFD_CREATE|",fd);
+ if(fd>=0){line("MIAO_ARM|MEMFD_TRUNCATE|",call(46,fd,4096,0,0,0,0));
+ line("MIAO_ARM|ASHMEM_COMPAT_SIZE|",call(29,fd,0x7704,0,0,0,0));
+ line("MIAO_ARM|ASHMEM_COMPAT_PROTECT|",call(29,fd,0x40087705,5,0,0,0));
+ line("MIAO_ARM|ASHMEM_COMPAT_PROT_MASK|",call(29,fd,0x7706,0,0,0,0));
+ line("MIAO_ARM|ASHMEM_COMPAT_RESTORE_WRITE|",call(29,fd,0x40087705,7,0,0,0));
+ call(57,fd,0,0,0,0,0);}
+ fd=openfile("/dev/hwrng",0);if(fd>=0){unsigned char bytes[16];line("MIAO_ARM|HWRNG_BYTES|",call(63,fd,(long)bytes,16,0,0,0));call(57,fd,0,0,0,0,0);}else line("MIAO_ARM|HWRNG_OPEN_ERROR|",fd);
+}
 __attribute__((noreturn)) void _start(void){
  directory("/proc");directory("/sys");directory("/dev");
  mountfs("proc","/proc");mountfs("sysfs","/sys");mountfs("devtmpfs","/dev");
  long fd=openfile("/dev/console",2);if(fd>=0)for(int i=0;i<3;i++)call(24,fd,i,0,0,0,0);
  out("MIAO_ARM|INIT64_STARTED\n");char uts[390];if(call(160,(long)uts,0,0,0,0,0)==0){out("MIAO_ARM|KERNEL|");out(uts+130);out("\nMIAO_ARM|MACHINE|");out(uts+260);out("\n");}
- show("/proc/meminfo");binder();compat();
+ show("/proc/meminfo");binder();memory_compat();compat();
  out("MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED\n");
  char cmd[1024];long cfd=openfile("/proc/cmdline",0);if(cfd>=0){long n=call(63,cfd,(long)cmd,sizeof(cmd)-1,0,0,0);if(n>0){cmd[n]=0;if(contains(cmd,"miao.autopoweroff=1"))poweroff();}call(57,cfd,0,0,0,0,0);}
  const long delay[2]={60,0};for(;;)call(101,(long)delay,0,0,0,0,0);
