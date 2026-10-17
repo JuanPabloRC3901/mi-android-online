@@ -1,10 +1,10 @@
 # MIT. Protocolo real con binario ARM64 bajo QEMU user en GitHub.
-import base64,binascii,json,os,pty,select,subprocess,sys,time
+import base64,binascii,json,os,pty,select,subprocess,sys,time,tty
 from pathlib import Path
 binary=Path(sys.argv[1]);directory=Path(sys.argv[2]);directory.mkdir(mode=0o700)
 master,slave=pty.openpty()
+tty.setraw(slave)
 process=subprocess.Popen(["qemu-aarch64",str(binary),os.ttyname(slave)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-os.close(slave)
 pending=b"";sequence=0
 def call(verb,arg=""):
  global sequence,pending
@@ -58,4 +58,4 @@ finally:
  process.terminate()
  try:process.wait(timeout=3)
  except subprocess.TimeoutExpired:process.kill();process.wait()
- os.close(master)
+ os.close(master);os.close(slave)
