@@ -6,6 +6,8 @@ on:
       - '.github/workflows/serial-bridge.yml'
       - 'android16-build/serial-bridge.c'
       - 'android16-build/test-serial-bridge.py'
+      - 'android16-build/serial-client.mjs'
+      - 'android16-build/test-serial-client.mjs'
 permissions:
   contents: read
 jobs:
@@ -32,4 +34,5 @@ jobs:
         run: |
           qemu-aarch64 ./miao-bridge-arm64 --self-test
           python3 android16-build/test-serial-bridge.py ./miao-bridge-test /tmp/miao-bridge-ci
+          node android16-build/test-serial-client.mjs
 # Compilación y protocolo. No es hosting ni prueba Android.
