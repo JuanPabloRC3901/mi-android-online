@@ -16,6 +16,8 @@ try{
  const bytes=Uint8Array.from({length:17011},(_,i)=>(i*37)&255),file=new File([bytes],'fixture-binary.bin');
  let confirmed=0;const result=await bridge.upload(file,{onProgress:(done,total)=>{assert.equal(total,file.size);assert.ok(done>confirmed);confirmed=done;}});
  assert.equal(result.installed,false);assert.equal(confirmed,file.size);assert.deepEqual(new Uint8Array(await readFile('/tmp/miao-bridge-ci/miao-upload.apk')),bytes);checks.push('17011 bytes transferidos por tres fragmentos y verificados en disco');
+ const largeBytes=new Uint8Array(12*1024*1024+3).fill(90),largeFile=new File([largeBytes],'large-fixture.bin');
+ const largeResult=await bridge.upload(largeFile);assert.equal(largeResult.bytes,largeBytes.length);assert.deepEqual(new Uint8Array(await readFile('/tmp/miao-bridge-ci/miao-upload.apk')),largeBytes);checks.push('12 MiB y 3 bytes transferidos y comparados, incluidos offsets mayores a diez millones');
  await assert.rejects(bridge.install(file,'cl.miao.fixture'),/código 127/);checks.push('no declara instalación sin PackageManager');
  await assert.rejects(bridge.request('tap','1 2\nMIAO1 4 install'),/Solicitud inválida/);checks.push('rechaza inyección de otra solicitud');
  console.log(JSON.stringify({javaScriptToArm64Verified:true,checks,androidBooted:false,apkInstalled:false},null,2));
