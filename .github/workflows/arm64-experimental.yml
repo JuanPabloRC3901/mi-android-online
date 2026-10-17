@@ -8,11 +8,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: mi-android-arm64-experimental
+  group: mi-android-arm64-${{ contains(github.event.head_commit.message, '[kernel-only]') && 'kernel' || 'full' }}
   cancel-in-progress: false
 jobs:
   runtime:
-    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false
+    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false && !contains(github.event.head_commit.message, '[kernel-only]')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     permissions:

@@ -11,9 +11,14 @@ tar -xJf "$ROOT/linux-$VERSION.tar.xz" -C "$ROOT/arm64-kernel-source" --strip-co
 cd "$ROOT/arm64-kernel-source"
 export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 make O=build defconfig
+# Esta máquina es virt; no necesita controladores de placas físicas ARM.
+for platform in $(sed -n 's/^config \(ARCH_[A-Z0-9_]*\)$/\1/p; s/^menuconfig \(ARCH_[A-Z0-9_]*\)$/\1/p' arch/arm64/Kconfig.platforms); do
+  scripts/config --file build/.config --disable "$platform"
+done
+scripts/config --file build/.config --enable ARCH_VEXPRESS --disable KVM
 scripts/kconfig/merge_config.sh -m -O build build/.config "$ROOT/arm64-build/kernel.config"
 make O=build olddefconfig
-for flag in COMPAT BINFMT_ELF ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE DEVTMPFS VIRTIO_BLK EXT4_FS; do
+for flag in COMPAT BINFMT_ELF ANDROID_BINDER_IPC ANDROID_BINDERFS MEMFD_CREATE DEVTMPFS VIRTIO_BLK EXT4_FS SERIAL_AMBA_PL011_CONSOLE ARM_GIC ARM_PSCI_FW; do
   grep -qx "CONFIG_$flag=y" build/.config || { echo "Falta CONFIG_$flag"; exit 1; }
 done
 make O=build -j"$(nproc)" Image
@@ -27,7 +32,7 @@ arm-linux-gnueabihf-gcc -nostdlib -static -Wl,--build-id=none -Wl,-e,_start "$OU
 python3 "$ROOT/arm64-build/pack-initrd.py" "$OUT"
 printf '%s\n' 'Android no arrancado: esto es un núcleo y una prueba de arquitectura/Binder.' > "$OUT/VALIDACION.txt"
 set +e
-timeout 90 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 1 -m 768 -nographic -monitor none -no-reboot -kernel "$OUT/Image" -initrd "$OUT/initrd.gz" -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr miao.autopoweroff=1" > "$OUT/native-control.log" 2>&1
+timeout 90 qemu-system-aarch64 -machine virt,gic-version=2 -cpu cortex-a57 -smp 1 -m 768 -nodefaults -display none -serial stdio -monitor none -nic none -no-reboot -kernel "$OUT/Image" -initrd "$OUT/initrd.gz" -append "console=ttyAMA0 rdinit=/init panic=-1 nokaslr miao.autopoweroff=1" > "$OUT/native-control.log" 2>&1
 status=$?
 set -e
 cat "$OUT/native-control.log"

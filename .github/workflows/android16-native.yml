@@ -1,0 +1,46 @@
+name: Mi Android - Probar Android 16 ARM64 sin publicar el sistema
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_run_id:
+        description: Run que publicó el núcleo ARM64 con Binder
+        required: true
+  workflow_run:
+    workflows: ['Mi Android - ARM64 y núcleo Android experimental']
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.repository_owner == 'JuanPabloRC3901' && github.event.repository.private == false && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Preparar herramientas sólo en GitHub
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu qemu-system-arm e2fsprogs adb
+      - name: Probar Android 16 ARM64 con nuestro núcleo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KERNEL_RUN_ID: ${{ github.event.workflow_run.id || inputs.kernel_run_id }}
+        run: bash android16-build/test-native.sh
+      - name: Publicar sólo evidencias, incluso si Android no arrancó
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -d android16-work/evidence ]; then
+            tar -czf android16-evidence.tar.gz -C android16-work evidence
+            sha256sum android16-evidence.tar.gz > SHA256SUMS-android16
+            gh release create "mi-android16-native-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+              android16-evidence.tar.gz SHA256SUMS-android16 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "Prueba nativa Android16 ARM64 ${GITHUB_RUN_ID}" \
+              --notes "Prueba efímera de componentes. No demuestra Android en navegador ni ejecuta los APK del usuario. Consultar result.json y registros reales."
+          fi
