@@ -1,0 +1,18 @@
+{
+  "javaScriptToArm64Verified": true,
+  "environment": "QEMU user en GitHub, no navegador",
+  "largeFixtureBytes": 12582915,
+  "transferSeconds": 3.478412171,
+  "fixtureIsExecutableAPK": false,
+  "checks": [
+    "ping ARM64 desde JavaScript",
+    "no inventa propiedades Android",
+    "no inventa una pantalla",
+    "17011 bytes transferidos por tres fragmentos y verificados en disco",
+    "12 MiB y 3 bytes transferidos y comparados, incluidos offsets mayores a diez millones",
+    "no declara instalación sin PackageManager",
+    "rechaza inyección de otra solicitud"
+  ],
+  "androidBooted": false,
+  "apkInstalled": false
+}
