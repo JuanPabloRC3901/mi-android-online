@@ -17,10 +17,10 @@ try{
  let confirmed=0;const result=await bridge.upload(file,{onProgress:(done,total)=>{assert.equal(total,file.size);assert.ok(done>confirmed);confirmed=done;}});
  assert.equal(result.installed,false);assert.equal(confirmed,file.size);assert.deepEqual(new Uint8Array(await readFile('/tmp/miao-bridge-ci/miao-upload.apk')),bytes);checks.push('17011 bytes transferidos por tres fragmentos y verificados en disco');
  const largeBytes=new Uint8Array(12*1024*1024+3).fill(90),largeFile=new File([largeBytes],'large-fixture.bin');
- const largeResult=await bridge.upload(largeFile);assert.equal(largeResult.bytes,largeBytes.length);assert.deepEqual(new Uint8Array(await readFile('/tmp/miao-bridge-ci/miao-upload.apk')),largeBytes);checks.push('12 MiB y 3 bytes transferidos y comparados, incluidos offsets mayores a diez millones');
+ const started=performance.now();const largeResult=await bridge.upload(largeFile);const transferSeconds=(performance.now()-started)/1000;assert.equal(largeResult.bytes,largeBytes.length);assert.deepEqual(new Uint8Array(await readFile('/tmp/miao-bridge-ci/miao-upload.apk')),largeBytes);checks.push('12 MiB y 3 bytes transferidos y comparados, incluidos offsets mayores a diez millones');
  await assert.rejects(bridge.install(file,'cl.miao.fixture'),/código 127/);checks.push('no declara instalación sin PackageManager');
  await assert.rejects(bridge.request('tap','1 2\nMIAO1 4 install'),/Solicitud inválida/);checks.push('rechaza inyección de otra solicitud');
- console.log(JSON.stringify({javaScriptToArm64Verified:true,checks,androidBooted:false,apkInstalled:false},null,2));
+ console.log(JSON.stringify({javaScriptToArm64Verified:true,environment:'QEMU user en GitHub, no navegador',largeFixtureBytes:largeBytes.length,transferSeconds,fixtureIsExecutableAPK:false,checks,androidBooted:false,apkInstalled:false},null,2));
 }catch(e){console.error(stderr);throw e;}
 finally{bridge.disconnect();child.kill('SIGTERM');}
 
