@@ -54,7 +54,7 @@ __attribute__((noreturn)) void _start(void){
  mountfs("proc","/proc");mountfs("sysfs","/sys");mountfs("devtmpfs","/dev");
  long fd=openfile("/dev/console",2);if(fd>=0)for(int i=0;i<3;i++)call(24,fd,i,0,0,0,0);
  out("MIAO_ARM|INIT64_STARTED\n");char uts[390];if(call(160,(long)uts,0,0,0,0,0)==0){out("MIAO_ARM|KERNEL|");out(uts+130);out("\nMIAO_ARM|MACHINE|");out(uts+260);out("\n");}
- show("/proc/meminfo");binder();memory_compat();compat();
+ out("MIAO_ARM|CONSOLE|");show("/sys/class/tty/console/active");show("/proc/meminfo");binder();memory_compat();compat();
  out("MIAO_ARM|CONTROL_COMPLETE|ANDROID_NOT_BOOTED\n");
  char cmd[1024];long cfd=openfile("/proc/cmdline",0);if(cfd>=0){long n=call(63,cfd,(long)cmd,sizeof(cmd)-1,0,0,0);if(n>0){cmd[n]=0;if(contains(cmd,"miao.autopoweroff=1"))poweroff();}call(57,cfd,0,0,0,0,0);}
  const long delay[2]={60,0};for(;;)call(101,(long)delay,0,0,0,0,0);
